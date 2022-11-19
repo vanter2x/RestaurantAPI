@@ -45,21 +45,27 @@ namespace RestaurantAPI.Services
             return restaurantDto;
         }
 
-        public List<RestaurantDto> GetAllRestaurants(RestaurantQuery query)
+        public PagedResult<RestaurantDto> GetAllRestaurants(RestaurantQuery query)
         {
-            var restaurants = _dbContext
+            var baseQuery = _dbContext
                 .Restaurants?
                 .Include(r => r.Address)
                 .Include(r => r.Dishes)
-                .Where( r => query.SearchPhrase == null || query.SearchPhrase.ToLower() == r.Description.ToLower() || query.SearchPhrase.ToLower() == r.Name.ToLower())
-                .Skip((query.PageNumber - 1) * query.PageSize).Take(query.PageSize).ToList();
+                .Where(r => query.SearchPhrase == null ||
+                query.SearchPhrase.ToLower() == r.Description.ToLower() ||
+                query.SearchPhrase.ToLower() == r.Name.ToLower());
 
-            if (restaurants is null)
-                throw new NotFoundException("Restaurant not found.");
+            var restaurants = baseQuery?
+                .Skip((query.PageNumber - 1) * query.PageSize)
+                .Take(query.PageSize).ToList();
 
+            var totalCount = baseQuery.Count();
+            
             var restaurantsDto = _mapper.Map<List<RestaurantDto>>(restaurants);
 
-            return restaurantsDto;
+            var result = new PagedResult<RestaurantDto>(restaurantsDto, totalCount ,query.PageSize, query.PageNumber);
+            
+            return result;
         }
 
         public int CreateRestaurant(CreateRestaurantDto dto)
