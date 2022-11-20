@@ -1,5 +1,4 @@
 ﻿using AutoMapper;
-using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using RestaurantAPI.Authorization;
@@ -7,7 +6,6 @@ using RestaurantAPI.Entities;
 using RestaurantAPI.Exceptions;
 using RestaurantAPI.Models;
 using System.Linq.Expressions;
-using System.Security.Claims;
 
 namespace RestaurantAPI.Services
 {
@@ -31,7 +29,7 @@ namespace RestaurantAPI.Services
 
         public RestaurantDto GetRestaurantById(int id)
         {
-            _logger.LogWarning ("Pobrano encję.");
+            _logger.LogWarning("Pobrano encję.");
             var restaurant = _dbContext
                 .Restaurants!
                 .Include(r => r.Address)
@@ -41,7 +39,7 @@ namespace RestaurantAPI.Services
             if (restaurant is null)
                 throw new NotFoundException("Restaurant not found.");
 
-                var restaurantDto = _mapper.Map<RestaurantDto>(restaurant);
+            var restaurantDto = _mapper.Map<RestaurantDto>(restaurant);
 
             return restaurantDto;
         }
@@ -65,22 +63,22 @@ namespace RestaurantAPI.Services
                     {nameof(Restaurant.Category), r => r.Category }
                 };
 
-               baseQuery = query.SortDirection == SortDirection.ASC ?
-                    baseQuery.OrderBy(columnSelectors[query.SortBy]) :
-                    baseQuery.OrderByDescending(columnSelectors[query.SortBy]);
+                baseQuery = query.SortDirection == SortDirection.ASC ?
+                     baseQuery.OrderBy(columnSelectors[query.SortBy]) :
+                     baseQuery.OrderByDescending(columnSelectors[query.SortBy]);
             }
 
-            var restaurants = baseQuery?
+            var restaurants = baseQuery
                 .Skip((query.PageNumber - 1) * query.PageSize)
                 .Take(query.PageSize).ToList();
 
             var totalCount = baseQuery.Count();
-            
+
             var restaurantsDto = _mapper.Map<List<RestaurantDto>>(restaurants);
 
-            var result = new PagedResult<RestaurantDto>(restaurantsDto, totalCount ,query.PageSize, query.PageNumber);
-            
-            return result;
+            return new PagedResult<RestaurantDto>(restaurantsDto, totalCount, query.PageSize, query.PageNumber);
+
+            //return result;
         }
 
         public int CreateRestaurant(CreateRestaurantDto dto)
@@ -99,7 +97,7 @@ namespace RestaurantAPI.Services
                 .Restaurants!
                 .FirstOrDefault(r => r.Id == id);
 
-            if(restaurant is null)
+            if (restaurant is null)
                 throw new NotFoundException("Restaurant not found.");
 
             var authorizationresult = _autorizationservice.AuthorizeAsync(
